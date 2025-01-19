@@ -1,0 +1,24 @@
+name = "jdapi"
+main = "workers-site/index.js"
+compatibility_date = "2024-01-19"
+
+[vars]
+API_URL = "https://api.xinyew.cn/api/jdtc"
+
+# Pages 配置
+# [site]
+# bucket = "./"
+# pages_build_output_dir = "dist"
+# entry-point = "workers-site"
+
+[env.production]
+name = "image-uploader-prod"
+
+# 如果需要构建步骤，在这里添加构建命令
+
+# 如果需要处理静态资源
+[site]
+bucket = "public"
+
+[build]
+command = "" 

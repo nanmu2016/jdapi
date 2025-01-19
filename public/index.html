@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>图片上传工具</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/spectrum-colorpicker2/dist/spectrum.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/spectrum-colorpicker2/dist/spectrum.min.js"></script>
+    <style>
+        :root {
+            /* 亮色模式变量 */
+            --primary-color: #4a90e2;
+            --secondary-color: #f5f6fa;
+            --success-color: #2ecc71;
+            --error-color: #e74c3c;
+            --text-color: #2c3e50;
+            --bg-color: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --card-bg: white;
+            --border-color: #e0e0e0;
+            --border-radius: 12px;
+            --success-bg: rgba(46, 204, 113, 0.1);  /* 添加上传成功背景色 */
+        }
+
+        [data-theme="dark"] {
+            /* 暗色模式变量 */
+            --primary-color: #60a5fa;
+            --secondary-color: #2d3748;
+            --success-color: #31c48d;
+            --error-color: #f98080;
+            --text-color: #e2e8f0;
+            --bg-color: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+            --card-bg: #1a202c;
+            --border-color: #4a5568;
+            --success-bg: rgba(49, 196, 141, 0.1);  /* 添加暗色模式上传成功背景色 */
+        }
+
+        body {
+            font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            transition: all 0.3s ease;
+        }
+
+        .container {
+            max-width: 1000px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+
+        .upload-container {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .upload-area {
+            padding: 20px;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .upload-area.drag-over {
+            border-color: var(--primary-color);
+            background: rgba(74, 144, 226, 0.1);
+        }
+
+        .upload-area i {
+            font-size: 48px;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .upload-area h3 {
+            margin: 0;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .upload-area p {
+            color: #999;
+            margin: 10px 0;
+        }
+
+        .btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(74, 144, 226, 0.3);
+        }
+
+        .btn i {
+            font-size: 18px;
+        }
+
+        #preview {
+            max-width: 100%;
+            max-height: 300px;
+            margin-top: 20px;
+            border-radius: var(--border-radius);
+            display: none;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .url-formats {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-top: 20px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .url-format {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 15px;
+        }
+
+        .url-label {
+            min-width: 80px;
+        }
+
+        .url-text {
+            flex: 1;
+            min-width: 200px;
+            word-break: break-all;
+        }
+
+        .copy-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+            min-width: 85px;
+        }
+
+        .copy-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .success {
+            background: var(--success-bg);
+            color: var(--success-color);
+            padding: 15px;
+            border-radius: var(--border-radius);
+            margin: 15px 0;
+            border: 1px solid var(--success-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .success i {
+            font-size: 1.2em;
+        }
+
+        .history-container {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 30px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .history-header h3 {
+            margin: 0;
+            color: var(--text-color);
+            font-size: 24px;
+        }
+
+        .clear-history {
+            background: var(--error-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .clear-history:hover {
+            background: #c0392b;
+        }
+
+        .history-item {
+            flex-direction: column;
+        }
+
+        .history-image {
+            width: 100%;
+            max-width: 300px;
+            height: auto;
+            margin: 0 auto;
+        }
+
+        .history-info {
+            flex: 1;
+        }
+
+        .history-time {
+            color: var(--text-color);
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .upload-progress {
+            height: 4px;
+            width: 100%;
+            background: #eee;
+            border-radius: 2px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--primary-color);
+            border-radius: 2px;
+            width: 0;
+            transition: width 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        /* 修改主题面板样式 */
+        .theme-panel {
+            position: fixed;
+            top: 20px;
+            right: -90vw;
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            z-index: 1000;
+            width: 280px;
+            transition: right 0.3s ease;
+        }
+
+        .theme-panel.show {
+            right: 20px;
+        }
+
+        /* 添加触发按钮样式 */
+        .theme-toggle-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1001;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle-btn:hover {
+            transform: rotate(30deg);
+        }
+
+        .theme-toggle-btn i {
+            font-size: 20px;
+        }
+
+        .theme-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .color-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .color-control {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .color-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        .color-value {
+            font-family: monospace;
+            color: var(--text-color);
+        }
+
+        .color-slider-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .color-preview {
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            border: 2px solid var(--border-color);
+        }
+
+        .color-sliders {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .slider-row label {
+            width: 20px;
+            font-size: 12px;
+            color: var(--text-color);
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 6px;
+            -webkit-appearance: none;
+            background: var(--secondary-color);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 0 5px rgba(0,0,0,0.2);
+        }
+
+        .preset-colors {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            margin-top: 15px;
+            padding: 10px;
+            background: var(--secondary-color);
+            border-radius: var(--border-radius);
+        }
+
+        .preset-color {
+            width: 100%;
+            padding-bottom: 100%;
+            position: relative;
+        }
+
+        .preset-color::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 4px;
+            border: 2px solid var(--border-color);
+            transition: all 0.2s ease;
+        }
+
+        .preset-color:hover::after {
+            transform: scale(1.1);
+            border-color: var(--primary-color);
+        }
+
+        .mode-switch {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .mode-btn {
+            background: var(--secondary-color);
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-color);
+            transition: all 0.3s ease;
+        }
+
+        .mode-btn:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .mode-btn.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        /* 修改历史记录中的 URL 格式样式 */
+        .history-urls .url-format {
+            background: var(--secondary-color);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .history-urls .url-label {
+            color: var(--primary-color);
+            font-weight: 600;
+            min-width: 80px;
+        }
+
+        .history-urls .url-text {
+            flex: 1;
+            font-family: monospace;
+            color: var(--text-color);
+            background: var(--card-bg);
+            padding: 6px 10px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+
+        .history-urls button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .history-urls button:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        /* 修改清除历史按钮样式 */
+        .clear-history {
+            background: var(--error-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .clear-history:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        /* 修改历史记录标题样式 */
+        .history-header h3 {
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .history-header h3 i {
+            color: var(--primary-color);
+        }
+
+        /* 上传成功提示样式 */
+        .upload-success {
+            background: var(--success-bg);
+            color: var(--success-color);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin: 1rem 0;
+            border: 1px solid var(--success-color);
+        }
+
+        /* URL、BBCode、Markdown 输出框样式 */
+        .output-box {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin: 0.5rem 0;
+        }
+
+        /* 媒体查询 */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .upload-area {
+                padding: 15px;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .copy-btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .url-format {
+                flex-direction: column;
+            }
+
+            .url-label {
+                width: 100%;
+            }
+
+            .history-header {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .clear-history {
+                width: 100%;
+            }
+
+            /* 调整颜色选择器在移动端的布局 */
+            .color-slider-group {
+                flex-direction: column;
+            }
+
+            .color-preview {
+                width: 100%;
+                height: 30px;
+            }
+        }
+
+        /* 针对更小屏幕的优化 */
+        @media (max-width: 480px) {
+            .preset-colors {
+                grid-template-columns: repeat(4, 1fr);
+            }
+
+            .theme-panel {
+                padding: 15px;
+            }
+
+            .mode-switch {
+                justify-content: center;
+            }
+        }
+
+        /* 针对超大屏幕的优化 */
+        @media (min-width: 1200px) {
+            .container {
+                max-width: 1200px;
+            }
+        }
+
+        /* 暗色模式下的额外调整 */
+        @media (prefers-color-scheme: dark) {
+            [data-theme="auto"] {
+                /* 自动暗色模式的样式 */
+                background: var(--bg-color);
+            }
+        }
+
+        /* 提示框样式 */
+        .copy-toast {
+            position: fixed;
+            bottom: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--card-bg);
+            color: var(--text-color);
+            padding: 12px 24px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        .copy-toast.show {
+            bottom: 20px;
+        }
+
+        .success-toast {
+            border-left: 4px solid var(--success-color);
+        }
+
+        .error-toast {
+            border-left: 4px solid var(--error-color);
+        }
+
+        .copy-toast i {
+            font-size: 1.2em;
+        }
+
+        /* 移动端优化 */
+        @media (max-width: 768px) {
+            .copy-toast {
+                width: 90%;
+                max-width: 300px;
+                text-align: center;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle-btn" id="themeToggleBtn" title="主题设置">
+        <i class="fas fa-palette"></i>
+    </button>
+
+    <div class="theme-panel" id="themePanel">
+        <div class="theme-header">
+            <h3>主题设置</h3>
+            <div class="mode-switch">
+                <button class="mode-btn" id="lightMode" title="日间模式">
+                    <i class="fas fa-sun"></i>
+                </button>
+                <button class="mode-btn" id="autoMode" title="自动模式">
+                    <i class="fas fa-clock"></i>
+                </button>
+                <button class="mode-btn" id="darkMode" title="夜间模式">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="color-controls">
+            <div class="color-control">
+                <div class="color-label">
+                    <span>主题色</span>
+                    <span class="color-value" id="primaryColorValue">#4a90e2</span>
+                </div>
+                <div class="color-slider-group">
+                    <div class="color-preview" id="primaryColorPreview"></div>
+                    <div class="color-sliders">
+                        <div class="slider-row">
+                            <label>R</label>
+                            <input type="range" min="0" max="255" value="74" class="color-slider" data-color="primary" data-channel="r">
+                        </div>
+                        <div class="slider-row">
+                            <label>G</label>
+                            <input type="range" min="0" max="255" value="144" class="color-slider" data-color="primary" data-channel="g">
+                        </div>
+                        <div class="slider-row">
+                            <label>B</label>
+                            <input type="range" min="0" max="255" value="226" class="color-slider" data-color="primary" data-channel="b">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="color-control">
+                <div class="color-label">
+                    <span>背景色起点</span>
+                    <span class="color-value" id="bgStartColorValue">#f5f7fa</span>
+                </div>
+                <div class="color-slider-group">
+                    <div class="color-preview" id="bgStartColorPreview"></div>
+                    <div class="color-sliders">
+                        <div class="slider-row">
+                            <label>R</label>
+                            <input type="range" min="0" max="255" value="245" class="color-slider" data-color="bgStart" data-channel="r">
+                        </div>
+                        <div class="slider-row">
+                            <label>G</label>
+                            <input type="range" min="0" max="255" value="247" class="color-slider" data-color="bgStart" data-channel="g">
+                        </div>
+                        <div class="slider-row">
+                            <label>B</label>
+                            <input type="range" min="0" max="255" value="250" class="color-slider" data-color="bgStart" data-channel="b">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="color-control">
+                <div class="color-label">
+                    <span>背景色终点</span>
+                    <span class="color-value" id="bgEndColorValue">#c3cfe2</span>
+                </div>
+                <div class="color-slider-group">
+                    <div class="color-preview" id="bgEndColorPreview"></div>
+                    <div class="color-sliders">
+                        <div class="slider-row">
+                            <label>R</label>
+                            <input type="range" min="0" max="255" value="195" class="color-slider" data-color="bgEnd" data-channel="r">
+                        </div>
+                        <div class="slider-row">
+                            <label>G</label>
+                            <input type="range" min="0" max="255" value="207" class="color-slider" data-color="bgEnd" data-channel="g">
+                        </div>
+                        <div class="slider-row">
+                            <label>B</label>
+                            <input type="range" min="0" max="255" value="226" class="color-slider" data-color="bgEnd" data-channel="b">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="preset-colors">
+                <div class="preset-color" style="background: #4a90e2" onclick="applyPresetTheme('#4a90e2', '#f5f7fa', '#c3cfe2')" title="蓝色主题"></div>
+                <div class="preset-color" style="background: #2ecc71" onclick="applyPresetTheme('#2ecc71', '#e8f5e9', '#a5d6a7')" title="绿色主题"></div>
+                <div class="preset-color" style="background: #e74c3c" onclick="applyPresetTheme('#e74c3c', '#ffeaea', '#ffb8b8')" title="红色主题"></div>
+                <div class="preset-color" style="background: #f39c12" onclick="applyPresetTheme('#f39c12', '#fff3e0', '#ffe0b2')" title="橙色主题"></div>
+                <div class="preset-color" style="background: #9b59b6" onclick="applyPresetTheme('#9b59b6', '#f3e5f5', '#e1bee7')" title="紫色主题"></div>
+                <div class="preset-color" style="background: #1abc9c" onclick="applyPresetTheme('#1abc9c', '#e0f2f1', '#b2dfdb')" title="青色主题"></div>
+                <div class="preset-color" style="background: #34495e" onclick="applyPresetTheme('#34495e', '#ecf0f1', '#bdc3c7')" title="深蓝主题"></div>
+                <div class="preset-color" style="background: #e67e22" onclick="applyPresetTheme('#e67e22', '#fff5e6', '#ffe0b2')" title="橘色主题"></div>
+                <div class="preset-color" style="background: #27ae60" onclick="applyPresetTheme('#27ae60', '#e8f5e9', '#a5d6a7')" title="深绿主题"></div>
+                <div class="preset-color" style="background: #c0392b" onclick="applyPresetTheme('#c0392b', '#ffebee', '#ffcdd2')" title="深红主题"></div>
+                <div class="preset-color" style="background: #8e44ad" onclick="applyPresetTheme('#8e44ad', '#f3e5f5', '#e1bee7')" title="深紫主题"></div>
+                <div class="preset-color" style="background: #16a085" onclick="applyPresetTheme('#16a085', '#e0f2f1', '#b2dfdb')" title="墨绿主题"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="upload-container">
+            <div class="upload-area" id="dropZone">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <h3>拖拽文件到这里或点击上传</h3>
+                <p>支持: JPG, PNG, GIF (最大 10MB)</p>
+                <input type="file" id="fileInput" accept="image/*" style="display: none;">
+                <button class="btn" onclick="document.getElementById('fileInput').click()">
+                    <i class="fas fa-plus"></i>选择图片
+                </button>
+            </div>
+            <div class="upload-progress">
+                <div class="progress-bar"></div>
+            </div>
+            <img id="preview" alt="预览">
+            <div id="result"></div>
+            <div id="urlFormats" class="url-formats">
+                <div class="url-format">
+                    <span class="url-label">URL</span>
+                    <div class="url-text" id="urlText"></div>
+                    <button class="copy-btn" onclick="copyText('urlText')">
+                        <i class="fas fa-copy"></i> 复制
+                    </button>
+                </div>
+                <div class="url-format">
+                    <span class="url-label">BBCode</span>
+                    <div class="url-text" id="bbcodeText"></div>
+                    <button class="copy-btn" onclick="copyText('bbcodeText')">
+                        <i class="fas fa-copy"></i> 复制
+                    </button>
+                </div>
+                <div class="url-format">
+                    <span class="url-label">Markdown</span>
+                    <div class="url-text" id="markdownText"></div>
+                    <button class="copy-btn" onclick="copyText('markdownText')">
+                        <i class="fas fa-copy"></i> 复制
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="history-container">
+            <div class="history-header">
+                <h3><i class="fas fa-history"></i> 上传历史</h3>
+                <button class="clear-history" onclick="clearHistory()">
+                    <i class="fas fa-trash"></i> 清除历史
+                </button>
+            </div>
+            <div id="historyList"></div>
+        </div>
+    </div>
+
+    <script>
+        // 拖拽上传相关
+        const dropZone = document.getElementById('dropZone');
+        
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+            document.body.addEventListener(eventName, preventDefaults, false);
+        });
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, unhighlight, false);
+        });
+
+        dropZone.addEventListener('drop', handleDrop, false);
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        function highlight(e) {
+            dropZone.classList.add('drag-over');
+        }
+
+        function unhighlight(e) {
+            dropZone.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+
+            if (files.length > 0) {
+                handleFiles(files);
+            }
+        }
+
+        // 处理粘贴上传
+        document.addEventListener('paste', function(e) {
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            for (let item of items) {
+                if (item.type.indexOf('image') === 0) {
+                    const file = item.getAsFile();
+                    handleFiles([file]);
+                    break;
+                }
+            }
+        });
+
+        function handleFiles(files) {
+            const file = files[0];
+            if (file && file.type.startsWith('image/')) {
+                // 显示预览
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('preview');
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+
+                // 上传文件
+                uploadFile(file);
+            } else {
+                alert('请选择图片文件！');
+            }
+        }
+
+        function uploadFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const progressBar = document.querySelector('.progress-bar');
+            const progressContainer = document.querySelector('.upload-progress');
+            const resultDiv = document.getElementById('result');
+
+            progressContainer.style.display = 'block';
+            progressBar.style.width = '0%';
+            resultDiv.innerHTML = '';
+            document.getElementById('urlFormats').style.display = 'none';
+
+            // 直接请求京东图床 API
+            fetch('https://api.xinyew.cn/api/jdtc', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                progressBar.style.width = '100%';
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                }, 500);
+
+                if (data.errno === 0) {
+                    resultDiv.innerHTML = '<div class="success">上传成功！</div>';
+                    updateUrlFormats(data.data.url);
+                    addToHistory(data.data.url);
+                } else {
+                    resultDiv.innerHTML = `<div class="error">上传失败：${data.message}</div>`;
+                }
+            })
+            .catch(error => {
+                progressContainer.style.display = 'none';
+                resultDiv.innerHTML = `<div class="error">上传出错：${error.message}</div>`;
+            });
+        }
+
+        // 文件选择处理
+        document.getElementById('fileInput').onchange = function(e) {
+            if (e.target.files.length > 0) {
+                handleFiles(e.target.files);
+            }
+        };
+
+        function copyText(elementId) {
+            const text = document.getElementById(elementId).textContent;
+            
+            // 尝试使用新的 Clipboard API
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showCopySuccess();
+                }).catch(() => {
+                    // 如果失败，使用后备方案
+                    fallbackCopyText(text);
+                });
+            } else {
+                // 在不支持 Clipboard API 的环境下使用后备方案
+                fallbackCopyText(text);
+            }
+        }
+
+        // 后备复制方案
+        function fallbackCopyText(text) {
+            // 创建临时输入框
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            
+            // 设置样式使其不可见
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-9999px';
+            textArea.style.top = '0';
+            
+            document.body.appendChild(textArea);
+            
+            try {
+                // 选择文本
+                textArea.select();
+                textArea.setSelectionRange(0, 99999); // 对于移动设备
+                
+                // 执行复制命令
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showCopySuccess();
+                } else {
+                    showCopyError('复制失败，请手动复制');
+                }
+            } catch (err) {
+                showCopyError('复制失败，请手动复制');
+            } finally {
+                // 清理
+                document.body.removeChild(textArea);
+            }
+        }
+
+        // 显示复制成功提示
+        function showCopySuccess() {
+            const toast = document.createElement('div');
+            toast.className = 'copy-toast success-toast';
+            toast.innerHTML = '<i class="fas fa-check-circle"></i> 复制成功！';
+            showToast(toast);
+        }
+
+        // 显示复制错误提示
+        function showCopyError(message) {
+            const toast = document.createElement('div');
+            toast.className = 'copy-toast error-toast';
+            toast.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
+            showToast(toast);
+        }
+
+        // 显示提示框
+        function showToast(toast) {
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('show');
+            }, 10);
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    document.body.removeChild(toast);
+                }, 300);
+            }, 2000);
+        }
+
+        function updateUrlFormats(url) {
+            const urlFormats = document.getElementById('urlFormats');
+            urlFormats.innerHTML = `
+                <div class="url-format">
+                    <span class="url-label">URL</span>
+                    <div class="url-text" id="urlText">${url}</div>
+                    <button class="copy-btn" onclick="copyText('urlText')">
+                        <i class="fas fa-copy"></i> 复制
+                    </button>
+                </div>
+                <div class="url-format">
+                    <span class="url-label">BBCode</span>
+                    <div class="url-text" id="bbcodeText">[img]${url}[/img]</div>
+                    <button class="copy-btn" onclick="copyText('bbcodeText')">
+                        <i class="fas fa-copy"></i> 复制
+                    </button>
+                </div>
+                <div class="url-format">
+                    <span class="url-label">Markdown</span>
+                    <div class="url-text" id="markdownText">![Image](${url})</div>
+                    <button class="copy-btn" onclick="copyText('markdownText')">
+                        <i class="fas fa-copy"></i> 复制
+                    </button>
+                </div>
+            `;
+            urlFormats.style.display = 'block';
+        }
+
+        function showUploadSuccess() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `
+                <div class="success">
+                    <i class="fas fa-check-circle"></i>
+                    上传成功！
+                </div>
+            `;
+        }
+
+        // 修改上传成功的处理函数
+        function handleUploadSuccess(data) {
+            showUploadSuccess();
+            updateUrlFormats(data.url);
+            addToHistory(data.url);
+        }
+
+        function addToHistory(imageUrl) {
+            let history = JSON.parse(localStorage.getItem('uploadHistory') || '[]');
+            history.unshift({
+                url: imageUrl,
+                time: new Date().toLocaleString()
+            });
+            if (history.length > 20) {
+                history = history.slice(0, 20);
+            }
+            localStorage.setItem('uploadHistory', JSON.stringify(history));
+            displayHistory();
+        }
+
+        function displayHistory() {
+            const history = JSON.parse(localStorage.getItem('uploadHistory') || '[]');
+            const historyList = document.getElementById('historyList');
+            historyList.innerHTML = '';
+
+            history.forEach(item => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                historyItem.innerHTML = `
+                    <img src="${item.url}" class="history-image" alt="历史图片">
+                    <div class="history-info">
+                        <div class="history-time">
+                            <i class="fas fa-clock"></i> ${item.time}
+                        </div>
+                        <div class="history-urls">
+                            <div class="url-format">
+                                <span class="url-label">URL</span>
+                                <span class="url-text">${item.url}</span>
+                                <button onclick="copyHistoryText('${item.url}')">
+                                    <i class="fas fa-copy"></i> 复制
+                                </button>
+                            </div>
+                            <div class="url-format">
+                                <span class="url-label">BBCode</span>
+                                <span class="url-text">[img]${item.url}[/img]</span>
+                                <button onclick="copyHistoryText('[img]${item.url}[/img]')">
+                                    <i class="fas fa-copy"></i> 复制
+                                </button>
+                            </div>
+                            <div class="url-format">
+                                <span class="url-label">Markdown</span>
+                                <span class="url-text">![Image](${item.url})</span>
+                                <button onclick="copyHistoryText('![Image](${item.url})')">
+                                    <i class="fas fa-copy"></i> 复制
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                historyList.appendChild(historyItem);
+            });
+        }
+
+        function copyHistoryText(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('已复制到剪贴板！');
+            }).catch(err => {
+                console.error('复制失败:', err);
+            });
+        }
+
+        function clearHistory() {
+            if (confirm('确定要清除所有上传历史记录吗？')) {
+                localStorage.removeItem('uploadHistory');
+                displayHistory();
+            }
+        }
+
+        window.onload = function() {
+            displayHistory();
+        };
+
+        // 添加主题面板控制
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
+        const themePanel = document.getElementById('themePanel');
+        
+        themeToggleBtn.addEventListener('click', () => {
+            themePanel.classList.toggle('show');
+        });
+
+        // 点击面板外部关闭面板
+        document.addEventListener('click', (e) => {
+            if (!themePanel.contains(e.target) && !themeToggleBtn.contains(e.target)) {
+                themePanel.classList.remove('show');
+            }
+        });
+
+        // 颜色控制相关函数
+        function updateColor(colorType, r, g, b) {
+            const hex = rgbToHex(r, g, b);
+            document.getElementById(`${colorType}ColorValue`).textContent = hex;
+            document.getElementById(`${colorType}ColorPreview`).style.backgroundColor = hex;
+
+            if (colorType === 'primary') {
+                document.documentElement.style.setProperty('--primary-color', hex);
+            } else {
+                const startColor = document.getElementById('bgStartColorValue').textContent;
+                const endColor = document.getElementById('bgEndColorValue').textContent;
+                document.documentElement.style.setProperty(
+                    '--bg-color',
+                    `linear-gradient(135deg, ${startColor} 0%, ${endColor} 100%)`
+                );
+            }
+
+            // 保存到 localStorage
+            localStorage.setItem(`${colorType}Color`, hex);
+        }
+
+        function rgbToHex(r, g, b) {
+            return '#' + [r, g, b].map(x => {
+                const hex = x.toString(16);
+                return hex.length === 1 ? '0' + hex : hex;
+            }).join('');
+        }
+
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+
+        function applyPresetTheme(primary, bgStart, bgEnd) {
+            // 更新主题色
+            const primaryRgb = hexToRgb(primary);
+            document.querySelectorAll('[data-color="primary"]').forEach(slider => {
+                const channel = slider.dataset.channel;
+                slider.value = primaryRgb[channel];
+            });
+            updateColor('primary', primaryRgb.r, primaryRgb.g, primaryRgb.b);
+
+            // 更新背景起点色
+            const bgStartRgb = hexToRgb(bgStart);
+            document.querySelectorAll('[data-color="bgStart"]').forEach(slider => {
+                const channel = slider.dataset.channel;
+                slider.value = bgStartRgb[channel];
+            });
+            updateColor('bgStart', bgStartRgb.r, bgStartRgb.g, bgStartRgb.b);
+
+            // 更新背景终点色
+            const bgEndRgb = hexToRgb(bgEnd);
+            document.querySelectorAll('[data-color="bgEnd"]').forEach(slider => {
+                const channel = slider.dataset.channel;
+                slider.value = bgEndRgb[channel];
+            });
+            updateColor('bgEnd', bgEndRgb.r, bgEndRgb.g, bgEndRgb.b);
+        }
+
+        // 初始化颜色滑块事件监听
+        document.querySelectorAll('.color-slider').forEach(slider => {
+            slider.addEventListener('input', function() {
+                const colorType = this.dataset.color;
+                const sliders = document.querySelectorAll(`[data-color="${colorType}"]`);
+                const values = {
+                    r: parseInt(sliders[0].value),
+                    g: parseInt(sliders[1].value),
+                    b: parseInt(sliders[2].value)
+                };
+                updateColor(colorType, values.r, values.g, values.b);
+            });
+        });
+
+        // 加载保存的颜色设置
+        function loadSavedColors() {
+            ['primary', 'bgStart', 'bgEnd'].forEach(colorType => {
+                const savedColor = localStorage.getItem(`${colorType}Color`);
+                if (savedColor) {
+                    const rgb = hexToRgb(savedColor);
+                    document.querySelectorAll(`[data-color="${colorType}"]`).forEach(slider => {
+                        const channel = slider.dataset.channel;
+                        slider.value = rgb[channel];
+                    });
+                    updateColor(colorType, rgb.r, rgb.g, rgb.b);
+                }
+            });
+        }
+
+        // 页面加载时初始化颜色设置
+        window.addEventListener('load', loadSavedColors);
+
+        // 日夜模式控制
+        const lightMode = document.getElementById('lightMode');
+        const autoMode = document.getElementById('autoMode');
+        const darkMode = document.getElementById('darkMode');
+        
+        function setMode(mode) {
+            // 移除所有按钮的激活状态
+            [lightMode, autoMode, darkMode].forEach(btn => btn.classList.remove('active'));
+            
+            // 设置新的模式
+            switch(mode) {
+                case 'light':
+                    document.documentElement.setAttribute('data-theme', 'light');
+                    lightMode.classList.add('active');
+                    break;
+                case 'dark':
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                    darkMode.classList.add('active');
+                    break;
+                case 'auto':
+                    autoMode.classList.add('active');
+                    checkTime();
+                    break;
+            }
+            
+            localStorage.setItem('colorMode', mode);
+        }
+
+        function checkTime() {
+            if (localStorage.getItem('colorMode') !== 'auto') return;
+            
+            const hour = new Date().getHours();
+            // 晚上8点到早上6点使用暗色模式
+            if (hour >= 20 || hour < 6) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        }
+
+        // 每分钟检查一次时间
+        setInterval(checkTime, 60000);
+
+        // 添加按钮点击事件
+        lightMode.addEventListener('click', () => setMode('light'));
+        autoMode.addEventListener('click', () => setMode('auto'));
+        darkMode.addEventListener('click', () => setMode('dark'));
+
+        // 初始化模式
+        const savedMode = localStorage.getItem('colorMode') || 'auto';
+        setMode(savedMode);
+
+        // 在页面加载时检查时间
+        window.addEventListener('load', () => {
+            checkTime();
+            loadSavedColors();
+        });
+    </script>
+</body>
+</html> 
